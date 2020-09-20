@@ -12,47 +12,60 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import accuracy_score
+from sklearn.neighbors import KNeighborsRegressor
+
 
 os.chdir(r'C:\Users\Kaja Amalie\Documents\Kaja\Kaggle\Kaggle')
 df = pd.read_csv('train.csv')
 
+df_columns = df[['Pclass',
+            'Sex',
+            'Age',
+            'SibSp',
+            'Parch',
+            'Embarked',
+            'Survived']]
 
-#
+#Split the train data into train and test data
+df_train, df_test = train_test_split(df_columns, test_size=0.2, random_state = 420)
 
 
 #Create x and y:
-X = df[['Pclass',
+X_train = df_train[['Pclass',
         'Sex',
         'Age',
         'SibSp',
         'Parch',
         'Embarked']]
-y = df['Survived']
-
-
+y_train = df_train['Survived']
 
 
 #Divide classes and make sure all values are numeric:
+
     
 #1)Make classes into OneHotEncoder: 
 tit_encoder = OneHotEncoder()
-tit_encoder.fit(X[['Pclass']])
-classes = tit_encoder.transform(X[['Pclass']]).todense()
+tit_encoder.fit(X_train[['Pclass']])
+classes = tit_encoder.transform(X_train[['Pclass']]).todense()
+X_train['First_class'] = classes[:,0]
+X_train['Second_class'] = classes[:,1]
+X_train['Third_class'] = classes[:,2]
 
-X[['First_class', 'Second_class', 'Third_class']] = pd.DataFrame(classes)
 
 #Delete values I no longer need: 
-del X['Pclass']
+del X_train['Pclass']
 del classes
 
 # make male and female into 
 tit_encoder = OneHotEncoder()
-tit_encoder.fit(X[['Sex']])
-Sexes = tit_encoder.transform(X[['Sex']]).todense()
+tit_encoder.fit(X_train[['Sex']])
+Sexes = tit_encoder.transform(X_train[['Sex']]).todense()
 
-X[['Female', 'Male']] = pd.DataFrame(Sexes)
+X_train['Female'] = Sexes[:,0]
+X_train['Male'] = Sexes[:,1]
 
-del X['Sex']
+del X_train['Sex']
 del Sexes
 
 
@@ -60,79 +73,74 @@ del Sexes
 #Make embarked into numerics
 #Get rid of null values
 titanic_imputer = SimpleImputer(strategy='most_frequent')
-titanic_imputer.fit(X[['Embarked']])
-X['Embarked'] = titanic_imputer.transform(X[['Embarked']])
+titanic_imputer.fit(X_train[['Embarked']])
+X_train['Embarked'] = titanic_imputer.transform(X_train[['Embarked']])
 
 tit_encoder = OneHotEncoder()
-tit_encoder.fit(X[['Embarked']])
-Embarked = tit_encoder.transform(X[['Embarked']]).todense()
-X[['Cherbourg', 'Queenstown', 'Southampton']] = pd.DataFrame(Embarked)
+tit_encoder.fit(X_train[['Embarked']])
+Embarked = tit_encoder.transform(X_train[['Embarked']]).todense()
+X_train['Cherbourg'] = Embarked[:,0]
+X_train['Queenstown'] =Embarked[:,1]
+X_train['Southampton'] = Embarked[:,2]
 
-del X['Embarked']
+del X_train['Embarked']
 del Embarked
 
 
 
 #Remove null values from age: 
 titanic_imputer = SimpleImputer(strategy='mean')
-titanic_imputer.fit(X[['Age']])
-X['Age'] = titanic_imputer.transform(X[['Age']]) #Round to only have whole numbers
+titanic_imputer.fit(X_train[['Age']])
+X_train['Age'] = titanic_imputer.transform(X_train[['Age']]) #Round to only have whole numbers
 
 #Remove float numbers from age
-X['Age'] = X['Age'].apply(np.floor)
+X_train['Age'] = X_train['Age'].apply(np.floor)
 
 
 #Create one column for fam. members:
-X['Family_members'] = X['SibSp'] + X['Parch']
-del X['SibSp']
-del X['Parch']
+X_train['Family_members'] = X_train['SibSp'] + X_train['Parch']
+del X_train['SibSp']
+del X_train['Parch']
 
 
 
 # StandardScaler on 
 
 data_std = StandardScaler()
-data_std.fit(X[['Age','Family_members']])
-data_std2 = data_std.transform(X[['Age','Family_members']])
+data_std.fit(X_train[['Age','Family_members']])
+data_std2 = data_std.transform(X_train[['Age','Family_members']])
 
-X[['Age_sc', 'Family_members_sc']] = pd.DataFrame(data_std2, columns = ['Age_sc', 'Family_members_sc'])
-
-del X['Family_members']
-   
-#create train before staring with the test data   
-X_train = X
-y_train = y
-
-del X
-del y
+X_train['Age_sc'] = data_std2[:,0]
+X_train['Family_members_sc'] =  data_std2[:,1]
 
 
-# Doing the same with the test data: 
-os.chdir(r'C:\Users\Kaja Amalie\Documents\Kaja\Kaggle\Kaggle')
-df2 = pd.read_csv('test.csv')
-
+del X_train['Family_members']
 del X_train['Age']
 
 
-# Doing exactly the same for test data:
-#Create x and y:
-X_test = df[['Pclass',
+
+#########################################################################################
+# Doing the same with the test data: 
+X_test = df_test[['Pclass',
         'Sex',
         'Age',
         'SibSp',
         'Parch',
         'Embarked']]
-
+y_test = df_test['Survived']
 
 
 #Divide classes and make sure all values are numeric:
+
     
 #1)Make classes into OneHotEncoder: 
 tit_encoder = OneHotEncoder()
 tit_encoder.fit(X_test[['Pclass']])
 classes = tit_encoder.transform(X_test[['Pclass']]).todense()
+X_test['First_class'] = classes[:,0]
+X_test['Second_class'] = classes[:,1]
+X_test['Third_class'] = classes[:,2]
 
-X_test[['First_class', 'Second_class', 'Third_class']] = pd.DataFrame(classes)
 
 #Delete values I no longer need: 
 del X_test['Pclass']
@@ -143,7 +151,8 @@ tit_encoder = OneHotEncoder()
 tit_encoder.fit(X_test[['Sex']])
 Sexes = tit_encoder.transform(X_test[['Sex']]).todense()
 
-X_test[['Female', 'Male']] = pd.DataFrame(Sexes)
+X_test['Female'] = Sexes[:,0]
+X_test['Male'] = Sexes[:,1]
 
 del X_test['Sex']
 del Sexes
@@ -152,14 +161,16 @@ del Sexes
 
 #Make embarked into numerics
 #Get rid of null values
-titanic_imputer2 = SimpleImputer(strategy='most_frequent')
-titanic_imputer2.fit(X_test[['Embarked']])
-X_test['Embarked'] = titanic_imputer2.transform(X_test[['Embarked']])
+titanic_imputer = SimpleImputer(strategy='most_frequent')
+titanic_imputer.fit(X_test[['Embarked']])
+X_test['Embarked'] = titanic_imputer.transform(X_test[['Embarked']])
 
-tit_encoder2 = OneHotEncoder()
-tit_encoder2.fit(X_test[['Embarked']])
-Embarked = tit_encoder2.transform(X_test[['Embarked']]).todense()
-X_test[['Cherbourg', 'Queenstown', 'Southampton']] = pd.DataFrame(Embarked)
+tit_encoder = OneHotEncoder()
+tit_encoder.fit(X_test[['Embarked']])
+Embarked = tit_encoder.transform(X_test[['Embarked']]).todense()
+X_test['Cherbourg'] = Embarked[:,0]
+X_test['Queenstown'] =Embarked[:,1]
+X_test['Southampton'] = Embarked[:,2]
 
 del X_test['Embarked']
 del Embarked
@@ -167,9 +178,9 @@ del Embarked
 
 
 #Remove null values from age: 
-titanic_imputer3 = SimpleImputer(strategy='mean')
-titanic_imputer3.fit(X_test[['Age']])
-X_test['Age'] = titanic_imputer3.transform(X_test[['Age']]) #Round to only have whole numbers
+titanic_imputer = SimpleImputer(strategy='mean')
+titanic_imputer.fit(X_test[['Age']])
+X_test['Age'] = titanic_imputer.transform(X_test[['Age']]) #Round to only have whole numbers
 
 #Remove float numbers from age
 X_test['Age'] = X_test['Age'].apply(np.floor)
@@ -180,24 +191,17 @@ X_test['Family_members'] = X_test['SibSp'] + X_test['Parch']
 del X_test['SibSp']
 del X_test['Parch']
 
-#Remove null values from age: 
-titanic_imputer = SimpleImputer(strategy='mean')
-titanic_imputer.fit(X[['Age']])
-X['Age'] = titanic_imputer.transform(X[['Age']]) #Round to only have whole numbers
-
-#Remove float numbers from age
-X['Age'] = X['Age'].apply(np.floor)
 
 
 # StandardScaler on 
 
-data_std_t = StandardScaler()
-data_std_t.fit(X_test[['Age','Family_members']])
-data_std2_t = data_std_t.transform(X_test[['Age','Family_members']])
+data_std = StandardScaler()
+data_std.fit(X_test[['Age','Family_members']])
+data_std2 = data_std.transform(X_test[['Age','Family_members']])
 
-X_test[['Age_sc', 'Family_members_sc']] = pd.DataFrame(data_std2_t, columns = ['Age_sc', 'Family_members_sc'])
+X_test['Age_sc'] = data_std2[:,0]
+X_test['Family_members_sc'] =  data_std2[:,1]
+
 
 del X_test['Family_members']
-   
-
 del X_test['Age']
