@@ -14,10 +14,16 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.metrics import correlation_matrix
 
 
 os.chdir(r'C:\Users\Kaja Amalie\Documents\Kaja\Kaggle\Kaggle')
 df = pd.read_csv('train.csv')
+
+
+correlation_matrix = train.corr()
+correlation_matrix['Survived'].sort_values(ascending = False)
+
 
 df_columns = df[['Pclass',
             'Sex',
@@ -26,6 +32,8 @@ df_columns = df[['Pclass',
             'Parch',
             'Embarked',
             'Survived']]
+
+corrMatrix = df_columns.corr()
 
 #Split the train data into train and test data
 df_train, df_test = train_test_split(df_columns, test_size=0.2, random_state = 420)
@@ -153,7 +161,7 @@ Sexes = tit_encoder.transform(X_test[['Sex']]).todense()
 
 X_test['Female'] = Sexes[:,0]
 X_test['Male'] = Sexes[:,1]
-
+   
 del X_test['Sex']
 del Sexes
 
@@ -207,7 +215,7 @@ del X_test['Family_members']
 del X_test['Age']
 
 ##############################################################################################
-TESTS
+#TESTS
 
 
 #Create and Train a linearregression algorithm with the training data. 
